@@ -1,0 +1,12 @@
+string limoID
+float64 vel
+float64 d0
+float64 d1
+float64 v1
+float64 d2
+float64 v2
+float64 l2
+float64 d3
+float64 v3
+float64 l3
+float64 vd
