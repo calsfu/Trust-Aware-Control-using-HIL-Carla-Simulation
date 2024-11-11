@@ -9,6 +9,7 @@ from cav_project.msg import limo_info, limo_info_array, ControlInfo
 class PubSub:
     def __init__(self, ID):
         self.ID = ID
+        rospy.init_node('test')
         self.control_info_topic = rospy.Publisher("control_info_"+self.ID, ControlInfo, queue_size=10)
         self.rate = rospy.Rate(10)
 
@@ -22,14 +23,12 @@ def msg_format(): #add input from Carla
     msgCI.steering_angle = 0.5 #eventually from Carla
     msgCI.desired_velocity = 1 #eventually from Carla
     msgCI.control_input = 1 #eventually from Carla
+    return msgCI
 
 if __name__ == '__main__':
     pubsub = PubSub("limo770")
-    test = 0
-    while not rospy.is_shutdown() and test != 1:
+    while not rospy.is_shutdown():
         msgCI = msg_format()
         pubsub.contro_info_topic.publish(msgCI)
-        test = 1
-        print(test)
         time.sleep(0.1)
     print("publishing ended")
