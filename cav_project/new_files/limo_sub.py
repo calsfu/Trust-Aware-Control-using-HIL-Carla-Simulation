@@ -4,7 +4,7 @@ import rospy
 # from geometry_msgs.msg import PoseStamped
 # from nav_msgs.msg import Odometry
 # from std_msgs.msg import String
-# from pylimo import limo
+from pylimo import limo
 # from ackermann_msgs.msg import AckermannDrive
 import time
 # import numpy as np
