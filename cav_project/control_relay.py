@@ -6,7 +6,7 @@ import threading
 import math
 from std_msgs.msg import String
 from cav_project.msg import ControlInfo
-from geometry_msg.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 
 
 

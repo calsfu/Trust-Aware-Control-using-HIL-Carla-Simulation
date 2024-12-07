@@ -7,7 +7,7 @@ import math
 from std_msgs.msg import String
 # from cav_project.dev import cav_control_id_info, cav_vrpn_client_node, cav_limo_info, cav_qp_solution
 from cav_project.msg import limo_info, QP_solution, ControlInfo
-from geometry_msg.msg import PoseStamped
+from geometry_msgs.msg import PoseStamped
 
 #Message Formats 
 #ControlInfo
@@ -39,7 +39,7 @@ class carla_cav:
         
         #sub data
         self.cav_data = ControlInfo()                   #subscriber data
-        
+		
         #pub data
         self.limo_data             = limo_info()                    #cav limo data
         self.vrpn_client_node_data = PoseStamped() #vrpn client data
@@ -100,7 +100,7 @@ class carla_cav:
         # STATE
         self.qp_solution_data = state
 
-        self.cav_control_callback()
+        self.cav_limo_info_publish()
         self.cav_vrpn_client_node_publish()
         self.cav_qp_solution_publish()
 
