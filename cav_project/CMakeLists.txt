@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -171,9 +172,11 @@ include_directories(
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
 catkin_install_python(PROGRAMS
- src/cav_project/src/main_coordinator.py
- src/cav_project/carla/carla_env.py
+ src/main_coordinator.py
+ carla/carla_env.py
  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+
+
 
 ## Mark executables for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
