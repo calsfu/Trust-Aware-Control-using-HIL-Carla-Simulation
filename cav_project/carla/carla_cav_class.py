@@ -25,7 +25,7 @@ from geometry_msg.msg import PoseStamped
 #qp_solution
     #float64 state SUBJECT TO CHANGE, CURRENTLY UNDEFINED
 
-class carla_cav_class:
+class carla_cav:
     
     def __init__(self, cav_id):
         self.cav_id = cav_id 
@@ -49,9 +49,9 @@ class carla_cav_class:
         self.rate = rospy.Rate(10)            #sleep @ 10 HZ        
         
         #Publish to cav state ROS topics w/ cav info
-        self.cav_limo_info_pub        = rospy.Publisher('/limo_info_' + self.cav_id, limo_info, queue_size=10)       
-        self.cav_vrpn_client_node_pub = rospy.Publisher('/vrpn_client_node' + self.cav_id, PoseStamped, queue_size=10) 
-        self.cav_qp_solution_pub      = rospy.Publisher('/qp_solution_' + self.cav_id, QP_solution, queue_size=10) 
+        self.limo_info_pub        = rospy.Publisher('/limo_info_' + self.cav_id, limo_info, queue_size=10)       
+        self.vrpn_client_node_pub = rospy.Publisher('/vrpn_client_node' + self.cav_id, PoseStamped, queue_size=10) 
+        self.qp_solution_pub      = rospy.Publisher('/qp_solution_' + self.cav_id, QP_solution, queue_size=10) 
         
     #sub callback function 
     def cav_control_callback(self,data):
@@ -62,21 +62,21 @@ class carla_cav_class:
     
     #limo data publish callback function
     def cav_limo_info_publish(self): 
-        self.cav_limo_info_pub.publish(self.cav_limo_data)
+        self.limo_info_pub.publish(self.cav_limo_data)
     
     #vrpn client node data publish callback function
     def cav_vrpn_client_node_publish(self): 
-        self.cav_vrpn_client_node_pub.publish(self.cav_vrpn_client_node_data)
+        self.vrpn_client_node_pub.publish(self.cav_vrpn_client_node_data)
     
     #vrpn client node data publish callback function
     def cav_qp_solution_publish(self): 
-        self.cav_qp_solution_pub.publish(self.cav_qp_solution_data)
+        self.qp_solution_pub.publish(self.cav_qp_solution_data)
     
     def update_and_publish(self, velocity, state, transform):
         # POSE
         # might have to update to match mocap
         self.vrpn_client_node_data.pose.position.x = transform.location.x
-        self.vrpn_client_node_data.pose.position.y = -transform.location.y  # Note the minus sign
+        self.vrpn_client_node_data.pose.position.y = -transform.location.y
         self.vrpn_client_node_data.pose.position.z = transform.location.z
 
         # quaternion!

@@ -4,6 +4,7 @@ import numpy as np
 import random
 import pygame
 import math
+import rospy
 
 class CAVEnv:
     def __init__(self,
@@ -22,6 +23,9 @@ class CAVEnv:
             pygame.init()
             self.render_display = pygame.display.set_mode((800, 600), pygame.HWSURFACE | pygame.DOUBLEBUF)
             self.clock = pygame.time.Clock()
+
+        # ros node
+        rospy.init_node('carla_env')
 
         self.cav_ids = [
             "limo155", 
@@ -121,52 +125,47 @@ class CAVEnv:
             attach_to=self.ego_carla_cav)
         self.actor_list.append(self.camera_display)
 
-    def step(self):
-        if self.render_display:
-            self.clock.tick()
+    def run(self):
+        # if self.render_display:
+        #     self.clock.tick()
             
-            # draw_image(self.render_display, display_image)
-            pygame.display.flip()
+        #     # draw_image(self.render_display, display_image)
+        #     pygame.display.flip()
+        while not rospy.is_shutdown():
+            # non-ego cavs
+            batch = []
+            for key, value in self.carla_ros_pairs.items():
+                cav_id = key
+                actor_id = value[0]
+                ros_cav = value[1]
+                
+                # update value in carla_cav
+                actor = self.world.get_actor(actor_id)
+                velocity = actor.get_velocity()
+                transform = actor.get_transform()
+                # TODO: ASK SABBIR ABOUT STATE
+                state = -1
+                ros_cav.update_and_publish(velocity, state, transform)
 
-        # non-ego cavs
-        batch = []
-        for key, value in self.carla_ros_pairs.items():
-            cav_id = key
-            actor_id = value[0]
-            ros_cav = value[1]
-            
-            # update value in carla_cav
-            actor = self.world.get_actor(actor_id)
-            velocity = actor.get_velocity()
-            transform = actor.get_transform()
-            # TODO: ASK SABBIR ABOUT STATE
-            state = -1
-            ros_cav.update_and_publish(velocity, state, transform)
-
-            # update CARLA values
-            steering_angle, desired_velocity, control = ros_cav.get_control_data()
-            
-            # TODO: FIX THROTTLE/BRAKE: Could maybe use with set_target_velocity
-            steering = steering_angle / 7000 # max is 7000, measured in 1/100th angle maybe?
-            speed = math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
-            
-            ackermann_control = carla.VehicleAckermannControl()
-            ackermann_control.steer = steering_angle/7000
-            ackermann_control.speed = desired_velocity
-            
-            batch.append(carla.command.ApplyVehicleAckermannControl(actor_id, ackermann_control))
-
-
+                # update CARLA values
+                steering_angle, desired_velocity, control = ros_cav.get_control_data()
+                
+                # TODO: FIX THROTTLE/BRAKE: Could maybe use with set_target_velocity
+                ackermann_control = carla.VehicleAckermannControl()
+                ackermann_control.steer = steering_angle/7000
+                ackermann_control.speed = desired_velocity
+                
+                batch.append(carla.command.ApplyVehicleAckermannControl(actor_id, ackermann_control))
         
-        # update non-go cav
-        responses = self.client.apply_batch_sync(batch)
+            # update non-go cav
+            responses = self.client.apply_batch_sync(batch)
 
-        # ego cav
-        # mocap stuff
-        # location, rotation = mocap
-        self.ego_carla_cav.set_transform(transform)
+            # ego cav
+            # mocap stuff
+            # location, rotation = mocap
+            self.ego_carla_cav.set_transform(transform)
 
-        self.world.tick()
+            self.world.tick()
 
 def draw_image(surface, image, blend=False):
     array = np.frombuffer(image.raw_data, dtype=np.dtype('uint8'))
@@ -180,6 +179,7 @@ def draw_image(surface, image, blend=False):
 
 def main():
     env = CAVEnv()
+    env.run()
 
 if __name__ == '__main__':
     main()
