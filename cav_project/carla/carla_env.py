@@ -1,5 +1,4 @@
 import carla
-import carla.command
 import carla_cav_class
 import numpy as np
 import random
