@@ -5,6 +5,7 @@ import pygame
 import math
 import rospy
 from carla_cav import CarlaCav
+from mocap import MoCap
 
 class CAVEnv:
     def __init__(self,
@@ -16,6 +17,7 @@ class CAVEnv:
         # init
         self.map_name = map_name
         self.render_display = render_display
+        self.port = carla_port
                 # initialize rendering
         if self.render_display:
             pygame.init()
@@ -66,6 +68,8 @@ class CAVEnv:
             self.actor_list = []
             self.create_display()
 
+        self.mocap = MoCap()
+
 
 
     def create_cav(self):
@@ -91,14 +95,26 @@ class CAVEnv:
             if blueprint.has_attribute('driver_id'):
                 driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
                 blueprint.set_attribute('driver_id', driver_id)
-            # blueprint.set_attribute('role_name', 'autopilot')
-            # batch.append(carla.command.SpawnActor(blueprint, transform).then(
-            #     carla.command.SetAutopilot(carla.command.FutureActor, True)))
+
+            # autopilot
+            blueprint.set_attribute('role_name', 'autopilot')
+            batch.append(carla.command.SpawnActor(blueprint, transform).then(
+                carla.command.SetAutopilot(carla.command.FutureActor, True)))
             
-            batch.append(carla.command.SpawnActor(blueprint, transform))
+			# no autopilot
+            # batch.append(carla.command.SpawnActor(blueprint, transform))
 
         # for response in self.client.apply_batch_sync(batch, False):
         #     self.carla_cavs.append(response.actor_id)
+        
+        tm = self.client.get_trafficmanager(8000)
+        tm_port = tm.get_port()
+        # for v in my_vehicles:
+        #   v.set_autopilot(True,tm_port)
+        # danger_car = my_vehicles[0]
+        # tm.ignore_lights_percentage(danger_car,100)
+        # tm.distance_to_leading_vehicle(danger_car,0)
+        # tm.vehicle_percentage_speed_difference(danger_car,-20)
 
         # save created cav and link to carla_cav ros node
         for i, response in enumerate(self.client.apply_batch_sync(batch)):
@@ -106,11 +122,13 @@ class CAVEnv:
                 pass
             else:
                 cav_id = self.cav_ids[i]
+                actor = self.world.get_actor(response.actor_id)
                 if self.cav_ids[i] == 'limo155':
-                    actor = self.world.get_actor(response.actor_id)
                     transform = carla.Transform()
                     transform.location = carla.Location(183, 280.17, .1)
                     actor.set_transform(transform)
+                actor.set_autopilot(True,8000)
+                tm.ignore_lights_percentage(actor,100)
                 ros_cav = CarlaCav(cav_id)
                 self.carla_ros_pairs[cav_id] = (response.actor_id, ros_cav)        
 
@@ -163,15 +181,20 @@ class CAVEnv:
                 ackermann_control.steer = steering_angle/7000
                 ackermann_control.speed = desired_velocity
                 
-                batch.append(carla.command.ApplyVehicleAckermannControl(actor_id, ackermann_control))
+                # batch.append(carla.command.ApplyVehicleAsckermannControl(actor_id, ackermann_control))
         
-            # update non-go cav
+            # update non-ego cav
             responses = self.client.apply_batch_sync(batch)
 
             # ego cav
-            # mocap stuff
-            # location, rotation = mocap
-            # self.ego_carla_cav.set_transform(transform)
+            mocap_x,mocap_y,mocap_yaw = self.mocap.get_mocap()
+            current_location = self.vehicle.get_transform()
+
+            current_location.location.x += mocap_x
+            current_location.location.y +=  mocap_y
+            current_location.rotation.yaw += mocap_yaw
+
+            self.vehicle.set_transform(current_location)
 
             self.world.tick()
 
