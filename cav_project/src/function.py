@@ -124,7 +124,7 @@ def search_collision(order_list, limo_num, zone):
 
 # search for lateral constraint
 def search_collision(order_list, limo_num):
-    limo = order_list[limo_num]
+    limo : CAV = order_list[limo_num]
     collision_limo1 = -1
     collision_limo2 = -1
     starting_pt_ind = limo.all_pts.index(limo.turning_pts[limo.current])

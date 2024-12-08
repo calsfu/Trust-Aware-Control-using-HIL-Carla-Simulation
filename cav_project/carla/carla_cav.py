@@ -25,8 +25,7 @@ from geometry_msgs.msg import PoseStamped
 #qp_solution
     #float64 state SUBJECT TO CHANGE, CURRENTLY UNDEFINED
 
-class carla_cav:
-    
+class CarlaCav:
     def __init__(self, cav_id):
         self.cav_id = cav_id 
     
@@ -36,12 +35,12 @@ class carla_cav:
         
         #Subscribe to controller info ROS topic w/ cav_control_id_info message
         self.cav_control_data_sub = rospy.Subscriber("control_info_"+self.cav_id, ControlInfo, self.cav_control_callback)
-        
+        print("started " + "control_info_"+self.cav_id)
         #sub data
-        self.cav_data = ControlInfo()                   #subscriber data
+        self.cav_data = (0, 15, 1)                  #subscriber data
 		
         #pub data
-        self.limo_data             = limo_info()                    #cav limo data
+        self.limo_data             = limo_info() #cav limo data
         self.vrpn_client_node_data = PoseStamped() #vrpn client data
         self.qp_solution_data      = QP_solution() 
         
@@ -50,27 +49,27 @@ class carla_cav:
         
         #Publish to cav state ROS topics w/ cav info
         self.limo_info_pub        = rospy.Publisher('/limo_info_' + self.cav_id, limo_info, queue_size=10)       
-        self.vrpn_client_node_pub = rospy.Publisher('/vrpn_client_node' + self.cav_id, PoseStamped, queue_size=10) 
+        self.vrpn_client_node_pub = rospy.Publisher('/vrpn_client_node/' + self.cav_id + '/pose', PoseStamped, queue_size=10) 
         self.qp_solution_pub      = rospy.Publisher('/qp_solution_' + self.cav_id, QP_solution, queue_size=10) 
         
     #sub callback function 
-    def cav_control_callback(self,data):
-        self.cav_data = data
+    def cav_control_callback(self, data):
+        self.cav_data = (data.steering_angle, data.desired_velocity, data.control_input)
 
     def get_control_data(self):
         return self.cav_data
     
     #limo data publish callback function
     def cav_limo_info_publish(self): 
-        self.limo_info_pub.publish(self.cav_limo_data)
+        self.limo_info_pub.publish(self.limo_data)
     
     #vrpn client node data publish callback function
     def cav_vrpn_client_node_publish(self): 
-        self.vrpn_client_node_pub.publish(self.cav_vrpn_client_node_data)
+        self.vrpn_client_node_pub.publish(self.vrpn_client_node_data)
     
     #vrpn client node data publish callback function
     def cav_qp_solution_publish(self): 
-        self.qp_solution_pub.publish(self.cav_qp_solution_data)
+        self.qp_solution_pub.publish(self.qp_solution_data)
     
     def update_and_publish(self, velocity, state, transform):
         # POSE
@@ -95,7 +94,8 @@ class carla_cav:
         self.vrpn_client_node_data.pose.orientation.w = qw
 
         # VELOCITY (assuming they mean speed cause it's only 1 float)
-        self.limo_data.velocity = math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
+        
+        self.limo_data.vel.data = math.sqrt(velocity.x**2 + velocity.y**2 + velocity.z**2)
 
         # STATE
         self.qp_solution_data = state

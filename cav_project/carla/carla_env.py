@@ -1,21 +1,19 @@
 import carla
-import carla_cav_class
 import numpy as np
 import random
 import pygame
 import math
 import rospy
+from carla_cav import CarlaCav
 
 class CAVEnv:
     def __init__(self,
-                num_cavs=11, 
                 map_name='Town01',
                 carla_port=2000,
                 render_display=False
                 ):
         
         # init
-        self.num_cavs = num_cavs
         self.map_name = map_name
         self.render_display = render_display
                 # initialize rendering
@@ -33,13 +31,15 @@ class CAVEnv:
             "limo777", 
             "limo793", 
             "limo795", 
-            "limo789", 
-            "limo780", 
-            "limo799", 
-            "limo808", 
-            "limo787", 
-            "limo770"
+            # "limo789", 
+            # "limo780", 
+            # "limo799", 
+            # "limo808", 
+            # "limo787", 
+            # "limo770"
             ]
+        
+        self.num_cavs = len(self.cav_ids)
 
         # connect to client
         self.client = carla.Client('localhost', carla_port)
@@ -53,7 +53,7 @@ class CAVEnv:
         self.carla_ros_pairs= {}
         # self.carla_cavs = []
         # self.ros_cavs = []
-        self.create_cav(num_cavs)
+        self.create_cav()
 
         # create ego
         self.ego_carla_cav = None
@@ -68,15 +68,15 @@ class CAVEnv:
 
 
 
-    def create_cav(self, num_cavs : int):
+    def create_cav(self):
         '''
         Will create num_cavs cavs in CARLA, connect them to ros_cav nodes
         '''
         init_transforms = self.world.get_map().get_spawn_points()
-        init_transforms = np.random.choice(init_transforms, num_cavs)
+        init_transforms = np.random.choice(init_transforms, self.num_cavs)
 
         # maybe change to make all non-ego one vehicle so its easier to see?
-        blueprints = self.world.get_blueprint_library().filter('vehicle.*')
+        blueprints = self.world.get_blueprint_library().filter('vehicle.audi.a2')
         blueprints = [x for x in blueprints if int(x.get_attribute('number_of_wheels')) == 4]
 
         # spawn vehicles
@@ -85,14 +85,17 @@ class CAVEnv:
             transform.location.z += 0.1  # otherwise can collide with the road it starts on
             blueprint = random.choice(blueprints)
             if blueprint.has_attribute('color'):
-                color = random.choice(blueprint.get_attribute('color').recommended_values)
+                # color = random.choice(blueprint.get_attribute('color').recommended_values)
+                color = '0, 0, 0'
                 blueprint.set_attribute('color', color)
             if blueprint.has_attribute('driver_id'):
                 driver_id = random.choice(blueprint.get_attribute('driver_id').recommended_values)
                 blueprint.set_attribute('driver_id', driver_id)
-            blueprint.set_attribute('role_name', 'autopilot')
-            batch.append(carla.command.SpawnActor(blueprint, transform).then(
-                carla.command.SetAutopilot(carla.command.FutureActor, True)))
+            # blueprint.set_attribute('role_name', 'autopilot')
+            # batch.append(carla.command.SpawnActor(blueprint, transform).then(
+            #     carla.command.SetAutopilot(carla.command.FutureActor, True)))
+            
+            batch.append(carla.command.SpawnActor(blueprint, transform))
 
         # for response in self.client.apply_batch_sync(batch, False):
         #     self.carla_cavs.append(response.actor_id)
@@ -103,7 +106,12 @@ class CAVEnv:
                 pass
             else:
                 cav_id = self.cav_ids[i]
-                ros_cav = carla_cav_class(cav_id)
+                if self.cav_ids[i] == 'limo155':
+                    actor = self.world.get_actor(response.actor_id)
+                    transform = carla.Transform()
+                    transform.location = carla.Location(183, 280.17, .1)
+                    actor.set_transform(transform)
+                ros_cav = CarlaCav(cav_id)
                 self.carla_ros_pairs[cav_id] = (response.actor_id, ros_cav)        
 
     def create_ego(self):
@@ -163,7 +171,7 @@ class CAVEnv:
             # ego cav
             # mocap stuff
             # location, rotation = mocap
-            self.ego_carla_cav.set_transform(transform)
+            # self.ego_carla_cav.set_transform(transform)
 
             self.world.tick()
 
