@@ -708,7 +708,7 @@ def set_map(self, ID):
         self.circle_t_PID = (-0.25, -0.000005, -0.7)
         self.circle_u_PID = (-0.6, -0.00045, -0.37)
 
-    if ID == "770":
+    if ID == "limo770":
        #coordinates of every critical point
        #coordinates of every critical point
        self.lane_width = 450
