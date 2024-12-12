@@ -5,7 +5,8 @@ import pygame
 import math
 import rospy
 from carla_cav import CarlaCav
-from mocap import MoCap
+# from mocap import MoCap
+from odom import Odom
 
 class CAVEnv:
     def __init__(self,
@@ -68,7 +69,7 @@ class CAVEnv:
             self.actor_list = []
             self.create_display()
 
-        self.mocap = MoCap()
+        self.odom = Odom()
 
 
 
@@ -186,13 +187,21 @@ class CAVEnv:
             # update non-ego cav
             responses = self.client.apply_batch_sync(batch)
 
-            # ego cav
-            mocap_x,mocap_y,mocap_yaw = self.mocap.get_mocap()
+            # mocap
+            # mocap_x,mocap_y,mocap_yaw = self.odom.get_odom()
+            # current_location = self.vehicle.get_transform()
+
+            # current_location.location.x += mocap_x
+            # current_location.location.y +=  mocap_y
+            # current_location.rotation.yaw += mocap_yaw
+
+            # odom
+            odom_x,odom_y,odom_yaw = self.odom.get_odom()
             current_location = self.vehicle.get_transform()
 
-            current_location.location.x += mocap_x
-            current_location.location.y +=  mocap_y
-            current_location.rotation.yaw += mocap_yaw
+            current_location.location.x += odom_x
+            current_location.location.y +=  odom_y
+            current_location.rotation.yaw += odom_yaw
 
             self.vehicle.set_transform(current_location)
 
